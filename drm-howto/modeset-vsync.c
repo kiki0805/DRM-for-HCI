@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <xf86drm.h>
 #include <xf86drmMode.h>
+#include "utils.h"
 
 struct modeset_buf;
 struct modeset_dev;
@@ -45,9 +46,10 @@ static int modeset_setup_dev(int fd, drmModeRes *res, drmModeConnector *conn,
 			     struct modeset_dev *dev);
 static int modeset_open(int *out, const char *node);
 static int modeset_prepare(int fd);
-static void modeset_draw(int fd);
+static void modeset_draw(int fd, int duration);
 static void modeset_draw_dev(int fd, struct modeset_dev *dev);
 static void modeset_cleanup(int fd);
+struct bit_ele* begin;
 
 /*
  * modeset_open() stays the same.
@@ -420,10 +422,20 @@ static void modeset_destroy_fb(int fd, struct modeset_buf *buf)
 
 int main(int argc, char **argv)
 {
+	int duration; // second
+	char* file_path; // output data
+
 	int ret, fd;
 	const char *card;
 	struct modeset_dev *iter;
 	struct modeset_buf *buf;
+
+	printf("Duration: ");
+	scanf("%d", &duration);
+	file_path =(char *)malloc(sizeof(char));
+    printf("File Path: ");
+	scanf("%s", file_path);
+    begin = read_swap_data(file_path);
 
 	/* check which DRM device to open */
 	if (argc > 1)
@@ -455,7 +467,7 @@ int main(int argc, char **argv)
 	}
 
 	/* draw some colors for 5seconds */
-	modeset_draw(fd);
+	modeset_draw(fd, duration);
 
 	/* cleanup everything */
 	modeset_cleanup(fd);
@@ -472,6 +484,8 @@ out_return:
 		fprintf(stderr, "exiting\n");
 	}
 	return ret;
+
+	free_bit_arr((struct bit_ele*)begin->first_bit);
 }
 
 /*
@@ -545,7 +559,7 @@ static void modeset_page_flip_event(int fd, unsigned int frame,
  * (you need to press RETURN after each keyboard input to make this work).
  */
 
-static void modeset_draw(int fd)
+static void modeset_draw(int fd, int duration)
 {
 	int ret;
 	fd_set fds;
@@ -579,10 +593,10 @@ static void modeset_draw(int fd)
 	}
 
 	/* wait 5s for VBLANK or input events */
-	while (time(&cur) < start + 5) {
+	while (time(&cur) < start + duration) {
 		FD_SET(0, &fds);
 		FD_SET(fd, &fds);
-		v.tv_sec = start + 5 - cur;
+		v.tv_sec = start + duration - cur;
 
 		ret = select(fd + 1, &fds, NULL, NULL, &v);
 		if (ret < 0) {
@@ -661,9 +675,11 @@ static void modeset_draw_dev(int fd, struct modeset_dev *dev)
 	// dev->r = next_color(&dev->r_up, dev->r, 20);
 	// dev->g = next_color(&dev->g_up, dev->g, 10);
 	// dev->b = next_color(&dev->b_up, dev->b, 5);
-	dev->r = dev->r == 0xff ? 0:0xff;
-	dev->g = dev->g == 0xff ? 0:0xff;
-	dev->b = dev->b == 0xff ? 0:0xff;
+	dev->r = begin->bit == '0' ? 0:0xff;
+	dev->g = begin->bit == '0' ? 0:0xff;
+	dev->b = begin->bit == '0' ? 0:0xff;
+	if (begin->next == NULL) begin = (struct bit_ele*) begin->first_bit;
+	else begin = begin->next;
 
 	buf = &dev->bufs[dev->front_buf ^ 1];
 	for (j = 0; j < buf->height; ++j) {
