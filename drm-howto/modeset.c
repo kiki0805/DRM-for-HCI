@@ -548,7 +548,7 @@ int main(int argc, char **argv)
 	if (argc > 1)
 		card = argv[1];
 	else
-		card = "/dev/dri/card0";
+		card = "/dev/dri/card1";
 
 	fprintf(stderr, "using card '%s'\n", card);
 
@@ -658,7 +658,7 @@ static void modeset_draw(void)
 			}
 		}
 
-		usleep(100000);
+		usleep(100000); // 100ms
 	}
 }
 

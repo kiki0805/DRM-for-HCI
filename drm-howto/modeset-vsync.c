@@ -429,7 +429,7 @@ int main(int argc, char **argv)
 	if (argc > 1)
 		card = argv[1];
 	else
-		card = "/dev/dri/card0";
+		card = "/dev/dri/card1";
 
 	fprintf(stderr, "using card '%s'\n", card);
 
@@ -553,6 +553,7 @@ static void modeset_draw(int fd)
 	struct timeval v;
 	drmEventContext ev;
 	struct modeset_dev *iter;
+	// fprintf(stdout, "Frame Rate: %d\n", modeset_list->mode.vrefresh);
 
 	/* init variables */
 	srand(time(&start));
@@ -566,9 +567,12 @@ static void modeset_draw(int fd)
 
 	/* redraw all outputs */
 	for (iter = modeset_list; iter; iter = iter->next) {
-		iter->r = rand() % 0xff;
-		iter->g = rand() % 0xff;
-		iter->b = rand() % 0xff;
+		// iter->r = rand() % 0xff;
+		// iter->g = rand() % 0xff;
+		// iter->b = rand() % 0xff;
+		iter->r = 0xff;
+		iter->g = 0xff;
+		iter->b = 0xff;
 		iter->r_up = iter->g_up = iter->b_up = true;
 
 		modeset_draw_dev(fd, iter);
@@ -598,18 +602,18 @@ static void modeset_draw(int fd)
  * understand it.
  */
 
-static uint8_t next_color(bool *up, uint8_t cur, unsigned int mod)
-{
-	uint8_t next;
+// static uint8_t next_color(bool *up, uint8_t cur, unsigned int mod)
+// {
+// 	uint8_t next;
 
-	next = cur + (*up ? 1 : -1) * (rand() % mod);
-	if ((*up && next < cur) || (!*up && next > cur)) {
-		*up = !*up;
-		next = cur;
-	}
+// 	next = cur + (*up ? 1 : -1) * (rand() % mod);
+// 	if ((*up && next < cur) || (!*up && next > cur)) {
+// 		*up = !*up;
+// 		next = cur;
+// 	}
 
-	return next;
-}
+// 	return next;
+// }
 
 /*
  * modeset_draw_dev() is a new function that redraws the screen of a single
@@ -654,9 +658,12 @@ static void modeset_draw_dev(int fd, struct modeset_dev *dev)
 	unsigned int j, k, off;
 	int ret;
 
-	dev->r = next_color(&dev->r_up, dev->r, 20);
-	dev->g = next_color(&dev->g_up, dev->g, 10);
-	dev->b = next_color(&dev->b_up, dev->b, 5);
+	// dev->r = next_color(&dev->r_up, dev->r, 20);
+	// dev->g = next_color(&dev->g_up, dev->g, 10);
+	// dev->b = next_color(&dev->b_up, dev->b, 5);
+	dev->r = dev->r == 0xff ? 0:0xff;
+	dev->g = dev->g == 0xff ? 0:0xff;
+	dev->b = dev->b == 0xff ? 0:0xff;
 
 	buf = &dev->bufs[dev->front_buf ^ 1];
 	for (j = 0; j < buf->height; ++j) {
